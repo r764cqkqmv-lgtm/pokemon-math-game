@@ -1,0 +1,249 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<title>Pokemon Multiplication Master</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:Arial,sans-serif;background:linear-gradient(135deg,#667eea 0%,#764ba2 100%);min-height:100vh;display:flex;justify-content:center;align-items:center;overflow-x:hidden}
+#loading{position:fixed;top:0;left:0;width:100%;height:100%;background:linear-gradient(135deg,#667eea 0%,#764ba2 100%);display:flex;flex-direction:column;justify-content:center;align-items:center;z-index:10000;gap:20px}
+.spinner{width:80px;height:80px;border:8px solid #fff;border-radius:50%;border-top-color:#e74c3c;border-bottom-color:#e74c3c;animation:spin 1s linear infinite;position:relative}
+.spinner::before{content:'';position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);width:20px;height:20px;background:#fff;border:4px solid #333;border-radius:50%}
+.spinner::after{content:'';position:absolute;top:50%;left:0;right:0;height:8px;background:#333;transform:translateY(-50%)}
+@keyframes spin{to{transform:rotate(360deg)}}
+#game{width:100%;max-width:1200px;padding:20px;display:none}
+.screen{background:#fff;border-radius:20px;padding:40px;box-shadow:0 10px 40px rgba(0,0,0,0.3);display:none;text-align:center}
+.screen.active{display:block}
+h1{font-size:48px;color:#e74c3c;text-shadow:3px 3px 0 #3498db,6px 6px 0 #f1c40f;margin-bottom:40px;font-weight:bold}
+h2{font-size:32px;color:#333;margin-bottom:30px}
+button{padding:18px 40px;font-size:20px;border:none;border-radius:12px;cursor:pointer;font-weight:bold;box-shadow:0 4px 8px rgba(0,0,0,0.2);margin:10px;transition:transform 0.1s}
+button:active{transform:scale(0.98)}
+.btn-red{background:#e74c3c;color:#fff}
+.btn-blue{background:#3498db;color:#fff}
+.btn-yellow{background:#f1c40f;color:#333}
+.btn-green{background:#2ecc71;color:#fff}
+.btn-purple{background:#9b59b6;color:#fff}
+.btn-gray{background:#95a5a6;color:#fff}
+button:disabled{background:#bdc3c7;cursor:not-allowed;opacity:0.5;transform:none}
+.sound-btn{position:fixed;bottom:20px;right:20px;width:60px;height:60px;background:#fff;border-radius:50%;display:flex;justify-content:center;align-items:center;cursor:pointer;box-shadow:0 4px 12px rgba(0,0,0,0.3);z-index:1000;font-size:28px;padding:0}
+.sound-btn.muted::after{content:'';position:absolute;width:3px;height:50px;background:#e74c3c;transform:rotate(45deg)}
+.vol-panel{position:fixed;bottom:90px;right:20px;background:#fff;border-radius:12px;padding:20px;box-shadow:0 4px 20px rgba(0,0,0,0.3);z-index:999;display:none}
+.vol-panel.show{display:block}
+.vol-slider{width:150px}
+input[type=text],input[type=number]{width:100%;padding:15px;font-size:18px;border:3px solid #3498db;border-radius:8px;margin:20px 0;text-align:center}
+input[type=number]{width:150px;font-size:32px}
+input[type=number]::-webkit-inner-spin-button,input[type=number]::-webkit-outer-spin-button{-webkit-appearance:none;margin:0}
+input[type=number]{-moz-appearance:textfield}
+.confirm-card{background:#f8f9fa;border:3px solid #3498db;border-radius:12px;padding:25px;margin:20px 0;text-align:left}
+.confirm-card p{font-size:18px;margin:10px 0}
+.game-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:30px;padding-bottom:20px;border-bottom:3px solid #ecf0f1}
+.timer{font-size:32px;font-weight:bold;color:#2ecc71;min-width:100px}
+.timer.warn{color:#e74c3c;animation:pulse 0.5s infinite}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:0.5}}
+.scores{position:fixed;left:20px;top:20px;background:#fff;border-radius:12px;padding:20px;box-shadow:0 4px 12px rgba(0,0,0,0.3);min-width:200px;z-index:100}
+.score{padding:12px;margin:8px 0;border-radius:8px;font-size:18px;font-weight:bold;border:3px solid transparent;transition:all 0.3s}
+.score.active{border-color:#333;background:#f8f9fa;transform:scale(1.05)}
+.p1{color:#e74c3c}.p2{color:#3498db}.p3{color:#f1c40f}.p4{color:#2ecc71}
+.crypto-area{background:#f8f9fa;border:3px solid #3498db;border-radius:12px;padding:40px;margin:30px auto;max-width:900px}
+.crypto{display:flex;justify-content:center;gap:15px;margin:20px 0;flex-wrap:wrap}
+.slot{display:flex;flex-direction:column;align-items:center;gap:10px}
+.letter{font-size:48px;font-weight:bold;color:#333;min-width:50px;text-align:center;font-family:'Courier New',monospace}
+.letter.slide{animation:slideDown 0.4s ease-out}
+@keyframes slideDown{from{transform:translateY(-50px);opacity:0}to{transform:translateY(0);opacity:1}}
+.under{font-size:48px;color:#bdc3c7}
+.hint{font-size:18px;color:#7f8c8d;font-family:'Courier New',monospace;min-height:22px}
+.prob-area{background:#fff3cd;border:3px solid #f1c40f;border-radius:12px;padding:30px;margin:30px auto;max-width:500px;text-align:center}
+.prob-area.shake{animation:shake 0.5s}
+@keyframes shake{0%,100%{transform:translateX(0)}25%{transform:translateX(-10px)}75%{transform:translateX(10px)}}
+.prob{font-size:42px;font-weight:bold;color:#333;margin-bottom:20px}
+.ans-input{display:flex;align-items:center;justify-content:center;gap:15px;margin:20px 0}
+.eq{font-size:42px;font-weight:bold;color:#333}
+.btn-group{display:flex;gap:15px;justify-content:center;margin-top:20px;flex-wrap:wrap}
+.feedback{position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);background:#fff;padding:40px 60px;border-radius:20px;box-shadow:0 10px 40px rgba(0,0,0,0.5);font-size:36px;font-weight:bold;z-index:5000;display:none;text-align:center}
+.feedback.correct{color:#2ecc71;border:5px solid #2ecc71}
+.feedback.wrong{color:#e74c3c;border:5px solid #e74c3c}
+.feedback.bonus{color:#9b59b6;border:5px solid #9b59b6}
+.sparkles{position:fixed;top:0;left:0;width:100%;height:100%;pointer-events:none;z-index:4999}
+.sparkle{position:absolute;font-size:24px;animation:fall 1s linear forwards}
+@keyframes fall{to{transform:translateY(100vh);opacity:0}}
+.reveal{position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);background:#fff;padding:40px;border-radius:20px;box-shadow:0 10px 40px rgba(0,0,0,0.5);z-index:5000;display:none;text-align:center;max-width:90vw}
+.reveal img{max-width:300px;max-height:300px;image-rendering:pixelated}
+.shiny-fx{position:absolute;top:0;left:0;width:100%;height:100%;pointer-events:none}
+.shiny-s{position:absolute;font-size:20px;animation:sparkle 1s infinite}
+@keyframes sparkle{0%,100%{opacity:1;transform:scale(1)}50%{opacity:0.5;transform:scale(1.3)}}
+.turn-ind{position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);background:#fff;padding:40px 80px;border-radius:20px;box-shadow:0 10px 40px rgba(0,0,0,0.5);font-size:48px;font-weight:bold;z-index:5000;display:none;text-align:center}
+.between{position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);background:#fff;padding:40px;border-radius:20px;box-shadow:0 10px 40px rgba(0,0,0,0.5);z-index:5000;display:none;text-align:center;max-width:600px}
+.round-info{margin:20px 0}
+.round-info h3{color:#e74c3c;margin-bottom:15px}
+.player-round-score{font-size:18px;margin:8px 0;padding:8px;border-radius:5px;background:#f8f9fa}
+.pause-overlay{position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.9);z-index:6000;display:none;justify-content:center;align-items:center}
+.pause-content{background:#fff;border-radius:20px;padding:50px;text-align:center;max-width:400px}
+.pause-btn{display:block;width:100%;margin:10px 0}
+.catch{position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);z-index:5001;display:none}
+.catch-ani{width:100px;height:100px;border:8px solid #333;border-radius:50%;background:linear-gradient(to bottom,#e74c3c 50%,#fff 50%);position:relative;animation:catch 1s ease-in-out}
+@keyframes catch{0%,100%{transform:rotate(0)}25%{transform:rotate(-20deg)}75%{transform:rotate(20deg)}}
+.catch-ani::before{content:'';position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);width:30px;height:30px;background:#fff;border:5px solid #333;border-radius:50%}
+.catch-ani::after{content:'';position:absolute;top:50%;left:0;right:0;height:8px;background:#333;transform:translateY(-50%)}
+.stats-box{background:#f8f9fa;border-radius:12px;padding:25px;margin:20px 0;text-align:left}
+.stats-box p{font-size:20px;margin:12px 0}
+.stats-box strong{color:#3498db}
+.example-box{background:#f8f9fa;border-left:5px solid #3498db;padding:15px;margin:15px 0;border-radius:5px}
+.hidden{display:none!important}
+@media(max-width:768px){
+h1{font-size:36px}
+.letter{font-size:36px}
+.prob{font-size:32px}
+.feedback{font-size:28px;padding:30px 40px}
+.turn-ind{font-size:36px;padding:30px 50px}
+}
+</style>
+</head>
+<body>
+<div id="loading">
+<div class="spinner"></div>
+<p style="color:#fff;font-size:20px;margin-top:20px">Loading Pokemon...</p>
+</div>
+<div id="game">
+<div id="menu" class="screen active">
+<h1>POKEMON<br>MULTIPLICATION<br>MASTER</h1>
+<button class="btn-red" onclick="setup('single')">SINGLE PLAYER</button>
+<button class="btn-blue" onclick="setup('multi')">MULTIPLAYER</button>
+<button class="btn-yellow" onclick="showHelp()">HOW TO PLAY</button>
+<button class="btn-green" onclick="showStats()">STATS</button>
+</div>
+<div id="setupScreen" class="screen"></div>
+<div id="gameScreen" class="screen"></div>
+<div id="endScreen" class="screen"></div>
+<div id="statsScreen" class="screen"></div>
+<div id="helpScreen" class="screen"></div>
+</div>
+<div class="sound-btn" id="soundBtn" onclick="toggleSoundPanel()">🔊</div>
+<div class="vol-panel" id="volPanel">
+<p style="font-weight:bold;margin-bottom:10px">Volume</p>
+<input type="range" class="vol-slider" id="volSlider" min="0" max="100" value="70">
+</div>
+<div id="feedback" class="feedback"></div>
+<div id="sparkles" class="sparkles"></div>
+<div id="reveal" class="reveal"></div>
+<div id="turnInd" class="turn-ind"></div>
+<div id="between" class="between"></div>
+<div id="pauseOverlay" class="pause-overlay">
+<div class="pause-content">
+<h2>PAUSED</h2>
+<button class="btn-green pause-btn" onclick="resumeGame()">RESUME</button>
+<button class="btn-yellow pause-btn" onclick="restartGame()">RESTART</button>
+<button class="btn-blue pause-btn" onclick="showHelp();document.getElementById('pauseOverlay').style.display='none'">INSTRUCTIONS</button>
+<button class="btn-purple pause-btn" onclick="toggleSoundPanel()">VOLUME</button>
+<button class="btn-gray pause-btn" onclick="quitToMenu()">QUIT TO MENU</button>
+</div>
+</div>
+<div id="catch" class="catch"><div class="catch-ani"></div></div>
+<script>
+const POKEMON=["BULBASAUR","IVYSAUR","VENUSAUR","CHARMANDER","CHARMELEON","CHARIZARD","SQUIRTLE","WARTORTLE","BLASTOISE","CATERPIE","METAPOD","BUTTERFREE","WEEDLE","KAKUNA","BEEDRILL","PIDGEY","PIDGEOTTO","PIDGEOT","RATTATA","RATICATE","SPEAROW","FEAROW","EKANS","ARBOK","PIKACHU","RAICHU","SANDSHREW","SANDSLASH","NIDORANF","NIDORINA","NIDOQUEEN","NIDORANM","NIDORINO","NIDOKING","CLEFAIRY","CLEFABLE","VULPIX","NINETALES","JIGGLYPUFF","WIGGLYTUFF","ZUBAT","GOLBAT","ODDISH","GLOOM","VILEPLUME","PARAS","PARASECT","VENONAT","VENOMOTH","DIGLETT","DUGTRIO","MEOWTH","PERSIAN","PSYDUCK","GOLDUCK","MANKEY","PRIMEAPE","GROWLITHE","ARCANINE","POLIWAG","POLIWHIRL","POLIWRATH","ABRA","KADABRA","ALAKAZAM","MACHOP","MACHOKE","MACHAMP","BELLSPROUT","WEEPINBELL","VICTREEBEL","TENTACOOL","TENTACRUEL","GEODUDE","GRAVELER","GOLEM","PONYTA","RAPIDASH","SLOWPOKE","SLOWBRO","MAGNEMITE","MAGNETON","FARFETCHD","DODUO","DODRIO","SEEL","DEWGONG","GRIMER","MUK","SHELLDER","CLOYSTER","GASTLY","HAUNTER","GENGAR","ONIX","DROWZEE","HYPNO","KRABBY","KINGLER","VOLTORB","ELECTRODE","EXEGGCUTE","EXEGGUTOR","CUBONE","MAROWAK","HITMONLEE","HITMONCHAN","LICKITUNG","KOFFING","WEEZING","RHYHORN","RHYDON","CHANSEY","TANGELA","KANGASKHAN","HORSEA","SEADRA","GOLDEEN","SEAKING","STARYU","STARMIE","MRMIME","SCYTHER","JYNX","ELECTABUZZ","MAGMAR","PINSIR","TAUROS","MAGIKARP","GYARADOS","LAPRAS","DITTO","EEVEE","VAPOREON","JOLTEON","FLAREON","PORYGON","OMANYTE","OMASTAR","KABUTO","KABUTOPS","AERODACTYL","SNORLAX","ARTICUNO","ZAPDOS","MOLTRES","DRATINI","DRAGONAIR","DRAGONITE","MEWTWO","MEW","CHIKORITA","BAYLEEF","MEGANIUM","CYNDAQUIL","QUILAVA","TYPHLOSION","TOTODILE","CROCONAW","FERALIGATR","SENTRET","FURRET","HOOTHOOT","NOCTOWL","LEDYBA","LEDIAN","SPINARAK","ARIADOS","CROBAT","CHINCHOU","LANTURN","PICHU","CLEFFA","IGGLYBUFF","TOGEPI","TOGETIC","NATU","XATU","MAREEP","FLAAFFY","AMPHAROS","BELLOSSOM","MARILL","AZUMARILL","SUDOWOODO","POLITOED","HOPPIP","SKIPLOOM","JUMPLUFF","AIPOM","SUNKERN","SUNFLORA","YANMA","WOOPER","QUAGSIRE","ESPEON","UMBREON","MURKROW","SLOWKING","MISDREAVUS","UNOWN","WOBBUFFET","GIRAFARIG","PINECO","FORRETRESS","DUNSPARCE","GLIGAR","STEELIX","SNUBBULL","GRANBULL","QWILFISH","SCIZOR","SHUCKLE","HERACROSS","SNEASEL","TEDDIURSA","URSARING","SLUGMA","MAGCARGO","SWINUB","PILOSWINE","CORSOLA","REMORAID","OCTILLERY","DELIBIRD","MANTINE","SKARMORY","HOUNDOUR","HOUNDOOM","KINGDRA","PHANPY","DONPHAN","PORYGON2","STANTLER","SMEARGLE","TYROGUE","HITMONTOP","SMOOCHUM","ELEKID","MAGBY","MILTANK","BLISSEY","RAIKOU","ENTEI","SUICUNE","LARVITAR","PUPITAR","TYRANITAR","LUGIA","HOOH","CELEBI","TREECKO","GROVYLE","SCEPTILE","TORCHIC","COMBUSKEN","BLAZIKEN","MUDKIP","MARSHTOMP","SWAMPERT","POOCHYENA","MIGHTYENA","ZIGZAGOON","LINOONE","WURMPLE","SILCOON","BEAUTIFLY","CASCOON","DUSTOX","LOTAD","LOMBRE","LUDICOLO","SEEDOT","NUZLEAF","SHIFTRY","TAILLOW","SWELLOW","WINGULL","PELIPPER","RALTS","KIRLIA","GARDEVOIR","SURSKIT","MASQUERAIN","SHROOMISH","BRELOOM","SLAKOTH","VIGOROTH","SLAKING","NINCADA","NINJASK","SHEDINJA","WHISMUR","LOUDRED","EXPLOUD","MAKUHITA","HARIYAMA","AZURILL","NOSEPASS","SKITTY","DELCATTY","SABLEYE","MAWILE","ARON","LAIRON","AGGRON","MEDITITE","MEDICHAM","ELECTRIKE","MANECTRIC","PLUSLE","MINUN","VOLBEAT","ILLUMISE","ROSELIA","GULPIN","SWALOT","CARVANHA","SHARPEDO","WAILMER","WAILORD","NUMEL","CAMERUPT","TORKOAL","SPOINK","GRUMPIG","SPINDA","TRAPINCH","VIBRAVA","FLYGON","CACNEA","CACTURNE","SWABLU","ALTARIA","ZANGOOSE","SEVIPER","LUNATONE","SOLROCK","BARBOACH","WHISCASH","CORPHISH","CRAWDAUNT","BALTOY","CLAYDOL","LILEEP","CRADILY","ANORITH","ARMALDO","FEEBAS","MILOTIC","CASTFORM","KECLEON","SHUPPET","BANETTE","DUSKULL","DUSCLOPS","TROPIUS","CHIMECHO","ABSOL","WYNAUT","SNORUNT","GLALIE","SPHEAL","SEALEO","WALREIN","CLAMPERL","HUNTAIL","GOREBYSS","RELICANTH","LUVDISC","BAGON","SHELGON","SALAMENCE","BELDUM","METANG","METAGROSS","REGIROCK","REGICE","REGISTEEL","LATIAS","LATIOS","KYOGRE","GROUDON","RAYQUAZA","JIRACHI","DEOXYS"];
+let state={mode:null,timed:false,diff:null,players:[],curPlayer:0,rounds:1,curRound:1,timeLimit:0,timeLeft:0,timer:null,turnTimer:null,pokemon:null,cipher:{},revealed:new Set(),score:0,scores:[],roundScores:[],correct:0,total:0,wrong:[],solved:0,problem:null,turnAnswered:false,paused:false,shiny:false,pokemonIndex:1};
+let stats=JSON.parse(localStorage.getItem('pmm_stats')||'{"easy":0,"med":0,"hard":0,"games":0,"solved":0,"correct":0,"total":0}');
+let sound=true,vol=0.7;
+function show(id){document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));document.getElementById(id).classList.add('active')}
+function setup(mode){state.mode=mode;let h=`<h2>Select ${mode=='single'?'Difficulty':'Settings'}</h2>`;if(mode=='single'){h+=`<button class="btn-green" onclick="setDiff('easy')">EASY<br><small>(5min, numbers shown)</small></button>
+<button class="btn-yellow" onclick="setDiff('med')">MEDIUM<br><small>(3min, numbers shown)</small></button>
+<button class="btn-red" onclick="setDiff('hard')">HARD<br><small>(2min, numbers hidden)</small></button>
+<button class="btn-gray" onclick="show('menu')">BACK</button>`}else{h+=`<button class="btn-blue" onclick="setDiff('easy')">EASY<br><small>(numbers shown)</small></button>
+<button class="btn-red" onclick="setDiff('hard')">HARD<br><small>(numbers hidden)</small></button>
+<button class="btn-gray" onclick="show('menu')">BACK</button>`}document.getElementById('setupScreen').innerHTML=h;show('setupScreen')}
+function setDiff(d){state.diff=d;if(state.mode=='single'){if(d=='easy')state.timeLimit=300;else if(d=='med')state.timeLimit=180;else state.timeLimit=120;setupSingleTimer()}else setupMulti()}
+function setupSingleTimer(){let h=`<h2>Select Timer</h2>
+<button class="btn-green" onclick="state.timed=true;confirm()">TIMED</button>
+<button class="btn-blue" onclick="state.timed=false;confirm()">UNTIMED</button>
+<button class="btn-gray" onclick="setup('single')">BACK</button>`;document.getElementById('setupScreen').innerHTML=h}
+function setupMulti(){let h=`<h2>Number of Players</h2>
+<button class="btn-blue" onclick="setPlayers(2)">2 PLAYERS</button>
+<button class="btn-blue" onclick="setPlayers(3)">3 PLAYERS</button>
+<button class="btn-blue" onclick="setPlayers(4)">4 PLAYERS</button>
+<button class="btn-gray" onclick="setup('multi')">BACK</button>`;document.getElementById('setupScreen').innerHTML=h}
+function setPlayers(n){state.players=Array(n).fill('');enterNames(0)}
+function enterNames(i){if(i>=state.players.length){setupMultiTimer();return}let h=`<h2>Enter Player ${i+1} Name</h2>
+<input type="text" id="nameInput" placeholder="Player ${i+1}" maxlength="12">
+<button class="btn-green" onclick="saveName(${i})">NEXT</button>
+${i>0?`<button class="btn-gray" onclick="enterNames(${i-1})">BACK</button>`:''}`;document.getElementById('setupScreen').innerHTML=h;setTimeout(()=>document.getElementById('nameInput').focus(),100)}
+function saveName(i){let n=document.getElementById('nameInput').value.trim()||`Player${i+1}`;if(state.players.slice(0,i).includes(n))n+=Math.floor(Math.random()*99)+1;state.players[i]=n;enterNames(i+1)}
+function setupMultiTimer(){let h=`<h2>Select Timer</h2>
+<button class="btn-green" onclick="state.timed=true;setupRounds()">TIMED<br><small>(10 seconds per turn)</small></button>
+<button class="btn-blue" onclick="state.timed=false;setupRounds()">UNTIMED</button>
+<button class="btn-gray" onclick="setPlayers(state.players.length)">BACK</button>`;document.getElementById('setupScreen').innerHTML=h}
+function setupRounds(){let h=`<h2>Number of Rounds</h2>
+<button class="btn-green" onclick="state.rounds=1;confirm()">1 ROUND</button>
+<button class="btn-yellow" onclick="state.rounds=3;confirm()">3 ROUNDS</button>
+<button class="btn-red" onclick="state.rounds=5;confirm()">5 ROUNDS</button>
+<button class="btn-gray" onclick="setupMultiTimer()">BACK</button>`;document.getElementById('setupScreen').innerHTML=h}
+function confirm(){let h=`<h2>Ready to Play?</h2><div class="confirm-card">`;h+=`<p><strong>Mode:</strong> ${state.mode=='single'?'Single Player':'Multiplayer'}</p>`;if(state.mode=='multi')h+=`<p><strong>Players:</strong> ${state.players.join(', ')}</p>`;h+=`<p><strong>Timer:</strong> ${state.timed?(state.mode=='multi'?'Timed (10 sec/turn)':'Timed'):'Untimed'}</p>`;h+=`<p><strong>Difficulty:</strong> ${state.diff=='easy'?'Easy':state.diff=='med'?'Medium':'Hard'}</p>`;if(state.mode=='multi')h+=`<p><strong>Rounds:</strong> ${state.rounds}</p>`;h+=`</div><button class="btn-green" onclick="startGame()">START GAME</button>
+<button class="btn-gray" onclick="show('menu')">BACK</button>`;document.getElementById('setupScreen').innerHTML=h}
+function startGame(){if(state.mode=='multi'){state.scores=state.players.map(()=>0);state.roundScores=state.players.map(()=>0)}state.timeLeft=state.timeLimit;state.correct=0;state.total=0;state.wrong=[];state.solved=0;state.score=0;state.curRound=1;state.curPlayer=0;newPokemon();show('gameScreen');renderGame();if(state.mode=='single'&&state.timed)startSingleTimer();if(state.mode=='multi'&&state.timed)startTurnTimer()}
+function startSingleTimer(){if(state.timer)clearInterval(state.timer);state.timer=setInterval(()=>{state.timeLeft--;let timerEl=document.querySelector('.timer');if(timerEl){timerEl.textContent=`${Math.floor(state.timeLeft/60)}:${(state.timeLeft%60).toString().padStart(2,'0')}`;if(state.timeLeft<30)timerEl.classList.add('warn')}if(state.timeLeft<=0){clearInterval(state.timer);endGame()}},1000)}
+function startTurnTimer(){if(state.turnTimer)clearInterval(state.turnTimer);state.timeLeft=10;updateTurnTimer();state.turnTimer=setInterval(()=>{state.timeLeft--;updateTurnTimer();if(state.timeLeft<=0){clearInterval(state.turnTimer);state.turnAnswered=true;showFeedback('wrong','Time Up!');setTimeout(()=>nextTurn(),1000)}},1000)}
+function updateTurnTimer(){let timerEl=document.querySelector('.timer');if(timerEl){timerEl.textContent=`${state.timeLeft}s`;if(state.timeLeft<=3)timerEl.classList.add('warn');else timerEl.classList.remove('warn')}}
+function newPokemon(){state.pokemon=POKEMON[Math.floor(Math.random()*POKEMON.length)];state.pokemonIndex=POKEMON.indexOf(state.pokemon)+1;state.shiny=Math.random()<0.05;state.revealed=new Set();state.turnAnswered=false;if(state.mode=='multi'){state.roundScores=state.players.map(()=>0)}generateCipher();nextProblem()}
+function generateCipher(){let prods=[];for(let i=1;i<=12;i++)for(let j=1;j<=12;j++)prods.push(i*j);prods=[...new Set(prods)];let letters='ABCDEFGHIJKLMNOPQRSTUVWXYZ'.split('');letters.sort(()=>Math.random()-0.5);state.cipher={};for(let i=0;i<26&&prods.length>0;i++){let p=prods.splice(Math.floor(Math.random()*prods.length),1)[0];state.cipher[p]=letters[i]}}
+function nextProblem(){let prods=Object.keys(state.cipher).map(Number);let needed=prods.filter(p=>state.pokemon.split('').some(l=>state.cipher[p]==l&&!state.revealed.has(l)));if(needed.length==0)needed=prods;let prod=needed[Math.floor(Math.random()*needed.length)];for(let i=1;i<=12;i++){for(let j=1;j<=12;j++){if(i*j==prod){state.problem={a:i,b:j,ans:prod};return}}}}
+function renderGame(){let h='';if(state.mode=='single'){h+=`<div class="game-header">`;if(state.timed){h+=`<div class="timer ${state.timeLeft<30?'warn':''}">${Math.floor(state.timeLeft/60)}:${(state.timeLeft%60).toString().padStart(2,'0')}</div>`;h+=`<button class="btn-gray" onclick="pauseGame()" style="padding:12px 24px;font-size:16px">PAUSE</button>`}else{h+=`<div style="font-size:20px;font-weight:bold">Score: ${state.score}</div>`}h+=`<button class="btn-gray" onclick="endGame()" style="padding:12px 24px;font-size:16px">END GAME</button></div>`}else{h+=`<div class="game-header">`;if(state.timed)h+=`<div class="timer">${state.timeLeft}s</div>`;h+=`<div style="font-size:20px;font-weight:bold">Round ${state.curRound}/${state.rounds}</div></div>`;h+=`<div class="scores">`;state.players.forEach((p,i)=>{h+=`<div class="score ${i==state.curPlayer?'active':''} p${i+1}">${p}: ${state.scores[i]}</div>`});h+=`</div>`}h+=`<div class="crypto-area"><div class="crypto">`;let letters=state.pokemon.split('');letters.forEach((l,idx)=>{h+=`<div class="slot">`;if(state.revealed.has(l))h+=`<div class="letter slide">${l}</div>`;else h+=`<div class="letter under">_</div>`;if((state.diff=='easy'||state.diff=='med')&&!state.revealed.has(l)){let n=Object.keys(state.cipher).find(k=>state.cipher[k]==l);h+=`<div class="hint">${n||''}</div>`}else if(state.diff=='easy'||state.diff=='med'){h+=`<div class="hint"></div>`}h+=`</div>`});h+=`</div></div>`;h+=`<div class="prob-area" id="probArea">
+<div class="prob">${state.problem.a} × ${state.problem.b} =</div>
+<div class="ans-input"><input type="number" id="ansInput" inputmode="numeric" placeholder="?"></div>
+<div class="btn-group">
+<button class="btn-green btn-submit" onclick="checkAnswer()">SUBMIT</button>
+</div></div>`;h+=`<div class="prob-area" id="guessArea" style="background:#f0e6ff;border-color:#9b59b6">
+<div class="prob" style="font-size:28px">Guess Pokemon Name:</div>
+<div class="ans-input"><input type="text" id="guessInput" placeholder="Type name here" style="text-transform:uppercase" maxlength="12"></div>
+<div class="btn-group">`;if(state.mode=='single'||(state.mode=='multi'&&!state.turnAnswered)){h+=`<button class="btn-purple btn-guess" id="guessBtn" onclick="guessName()">GUESS NAME</button>`}h+=`</div></div>`;document.getElementById('gameScreen').innerHTML=h;setTimeout(()=>{let input=document.getElementById('ansInput');if(input){input.focus();input.addEventListener('keypress',e=>{if(e.key=='Enter')checkAnswer()})}let guessInput=document.getElementById('guessInput');if(guessInput){guessInput.addEventListener('keypress',e=>{if(e.key=='Enter')guessName()})}},100)}
+function checkAnswer(){let ans=parseInt(document.getElementById('ansInput').value);if(isNaN(ans))return;if(state.turnTimer)clearInterval(state.turnTimer);state.total++;state.turnAnswered=true;if(state.mode=='multi'){let guessInput=document.getElementById('guessInput');if(guessInput){guessInput.disabled=true;guessInput.value=''}}if(ans==state.problem.ans){state.correct++;showFeedback('correct',`Correct!<br>${state.problem.a} × ${state.problem.b} = ${state.problem.ans} ✓`);if(state.cipher[ans]){let newLetter=state.cipher[ans];state.revealed.add(newLetter);let count=state.pokemon.split('').filter(l=>l==newLetter).length;let pts=count*10;if(state.mode=='single')state.score+=pts;else{state.scores[state.curPlayer]+=pts;state.roundScores[state.curPlayer]+=pts}}if(!checkSolved()){setTimeout(()=>{if(state.mode=='multi')nextTurn();else{nextProblem();renderGame()}},1000)}}else{state.wrong.push(`${state.problem.a}×${state.problem.b}`);showFeedback('wrong','Uh-Oh!');let area=document.getElementById('probArea');if(area)area.classList.add('shake');setTimeout(()=>{if(area)area.classList.remove('shake')},500);if(state.mode=='multi'){setTimeout(()=>nextTurn(),1000)}else{setTimeout(()=>{nextProblem();renderGame()},1000)}}}
+function showFeedback(type,msg){let fb=document.getElementById('feedback');fb.className=`feedback ${type}`;fb.innerHTML=msg;fb.style.display='block';if(type=='correct')createSparkles();setTimeout(()=>{fb.style.display='none'},1000)}
+function createSparkles(){let c=document.getElementById('sparkles');for(let i=0;i<20;i++){let s=document.createElement('div');s.className='sparkle';s.textContent='✨';s.style.left=Math.random()*100+'%';s.style.animationDelay=Math.random()*0.5+'s';c.appendChild(s);setTimeout(()=>s.remove(),1000)}}
+function checkSolved(){if([...state.pokemon].every(l=>state.revealed.has(l))){pokemonSolved();return true}return false}
+function pokemonSolved(){state.solved++;let completionPts=25;if(state.mode=='single')state.score+=completionPts;else{state.scores[state.curPlayer]+=completionPts;state.roundScores[state.curPlayer]+=completionPts}showPokemon()}
+function guessName(){let guessInput=document.getElementById('guessInput');let g=guessInput.value.trim();if(!g){alert('Please enter a Pokemon name!');return}if(state.turnTimer)clearInterval(state.turnTimer);if(g.toUpperCase()==state.pokemon){state.turnAnswered=true;showFeedback('bonus','Name Guessed! +25 points');showCatch();let guessPts=25;if(state.mode=='single')state.score+=guessPts;else{state.scores[state.curPlayer]+=guessPts;state.roundScores[state.curPlayer]+=guessPts}state.revealed=new Set(state.pokemon.split(''));setTimeout(()=>pokemonSolved(),1000)}else{showFeedback('wrong','Uh-Oh!');if(state.mode=='multi'){state.turnAnswered=true;let ansInput=document.getElementById('ansInput');if(ansInput)ansInput.disabled=true;guessInput.disabled=true;setTimeout(()=>nextTurn(),1000)}else{guessInput.value='';setTimeout(()=>guessInput.focus(),1000)}}}
+function showCatch(){let c=document.getElementById('catch');c.style.display='block';setTimeout(()=>c.style.display='none',1000)}
+function showPokemon(){let r=document.getElementById('reveal');r.innerHTML='<div style="position:relative"><img src="https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/items/poke-ball.png" style="max-width:300px"></div><p>Loading...</p>';r.style.display='block';let url=`https://pokeapi.co/api/v2/pokemon/${state.pokemonIndex}`;fetch(url).then(res=>res.json()).then(data=>{let img=state.shiny?(data.sprites.front_shiny||data.sprites.front_default):data.sprites.front_default;let imgHtml=`<div style="position:relative">`;imgHtml+=`<img src="${img||'https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/items/poke-ball.png'}" style="max-width:300px;max-height:300px">`;if(state.shiny){imgHtml+=`<div class="shiny-fx">`;for(let i=0;i<8;i++){let x=20+Math.random()*60;let y=20+Math.random()*60;imgHtml+=`<div class="shiny-s" style="left:${x}%;top:${y}%">✨</div>`}imgHtml+=`</div>`}imgHtml+=`</div>`;imgHtml+=`<button class="btn-green continue-btn" onclick="continuePokemon()">CONTINUE</button>`;r.innerHTML=imgHtml}).catch(()=>{r.innerHTML=`<div style="position:relative"><img src="https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/items/poke-ball.png" style="max-width:300px"></div><button class="btn-green continue-btn" onclick="continuePokemon()">CONTINUE</button>`})}
+function continuePokemon(){document.getElementById('reveal').style.display='none';if(state.mode=='single'){newPokemon();renderGame()}else{if(state.curRound>=state.rounds){showBetweenRounds(true)}else{showBetweenRounds(false)}}}
+function showBetweenRounds(isFinal){let b=document.getElementById('between');let h=`<h2>Round ${state.curRound} Complete!</h2>`;h+=`<div class="round-info"><h3>Round Scores:</h3>`;state.players.forEach((p,i)=>{h+=`<div class="player-round-score p${i+1}">${p}: +${state.roundScores[i]} pts</div>`});h+=`</div>`;h+=`<div class="round-info"><h3>Total Scores:</h3>`;let sorted=[...state.players.map((n,i)=>({name:n,score:state.scores[i],idx:i}))].sort((a,b)=>b.score-a.score);sorted.forEach((p,rank)=>{h+=`<div class="player-round-score p${p.idx+1}">${rank+1}. ${p.name}: ${p.score} pts</div>`});h+=`</div>`;if(!isFinal){h+=`<button class="btn-green" onclick="nextRound()">NEXT ROUND</button>`}else{h+=`<button class="btn-green" onclick="checkTieAndEnd()">VIEW FINAL RESULTS</button>`}b.innerHTML=h;b.style.display='block';if(!isFinal){setTimeout(()=>{b.style.display='none';nextRound()},5000)}}
+function nextRound(){state.curRound++;state.curPlayer=0;state.turnAnswered=false;newPokemon();renderGame();if(state.mode=='multi'&&state.timed)startTurnTimer()}
+function checkTieAndEnd(){let maxScore=Math.max(...state.scores);let winners=state.scores.filter(s=>s==maxScore).length;if(winners>1){showFeedback('bonus','TIE! Tiebreaker Round!');setTimeout(()=>{document.getElementById('between').style.display='none';state.curRound++;state.curPlayer=0;state.turnAnswered=false;newPokemon();renderGame();if(state.mode=='multi'&&state.timed)startTurnTimer()},2000)}else{document.getElementById('between').style.display='none';endMulti()}}
+function nextTurn(){if(state.mode=='single')return;state.curPlayer=(state.curPlayer+1)%state.players.length;state.turnAnswered=false;showTurnIndicator()}
+function showTurnIndicator(){let t=document.getElementById('turnInd');let playerColors=['#e74c3c','#3498db','#f1c40f','#2ecc71'];t.innerHTML=`<span style="color:${playerColors[state.curPlayer]}">${state.players[state.curPlayer]}'s Turn!</span>`;t.style.display='block';setTimeout(()=>{t.style.display='none';renderGame();if(state.timed)startTurnTimer()},2000)}
+function pauseGame(){state.paused=true;if(state.timer)clearInterval(state.timer);document.getElementById('pauseOverlay').style.display='flex'}
+function resumeGame(){state.paused=false;document.getElementById('pauseOverlay').style.display='none';if(state.mode=='single'&&state.timed)startSingleTimer()}
+function restartGame(){if(confirm('Restart the game? Your progress will be lost.')){document.getElementById('pauseOverlay').style.display='none';startGame()}}
+function quitToMenu(){if(confirm('Quit to menu? Your progress will be lost.')){if(state.timer)clearInterval(state.timer);if(state.turnTimer)clearInterval(state.turnTimer);document.getElementById('pauseOverlay').style.display='none';resetGame()}}
+function endGame(){if(state.timer)clearInterval(state.timer);if(state.turnTimer)clearInterval(state.turnTimer);stats.games++;stats.solved+=state.solved;stats.correct+=state.correct;stats.total+=state.total;if(state.diff=='easy'&&state.score>stats.easy)stats.easy=state.score;if(state.diff=='med'&&state.score>stats.med)stats.med=state.score;if(state.diff=='hard'&&state.score>stats.hard)stats.hard=state.score;localStorage.setItem('pmm_stats',JSON.stringify(stats));let h=`<h2>Game Over!</h2><div class="stats-box">`;h+=`<p><strong>Score:</strong> ${state.score}</p>`;h+=`<p><strong>Pokemon Solved:</strong> ${state.solved}</p>`;h+=`<p><strong>Accuracy:</strong> ${state.correct}/${state.total} ${state.total>0?'('+Math.round(state.correct/state.total*100)+'%)':''}</p>`;let w=[...new Set(state.wrong)].sort((a,b)=>{let[a1]=a.split('×').map(Number);let[b1]=b.split('×').map(Number);return a1-b1});if(w.length>0){h+=`<p class="incorrect-list"><strong>Incorrect:</strong> ${w.slice(0,5).join(', ')}`;if(w.length>5)h+=` and ${w.length-5} more`;h+=`</p>`}if(state.diff=='easy'&&state.score>stats.easy||state.diff=='med'&&state.score>stats.med||state.diff=='hard'&&state.score>stats.hard){h+=`<p style="color:#e74c3c;font-weight:bold;font-size:24px">🎉 NEW HIGH SCORE! 🎉</p>`}h+=`</div>`;h+=`<div class="btn-group">
+<button class="btn-green" onclick="playAgainChoice()">PLAY AGAIN</button>
+<button class="btn-blue" onclick="viewCurrentStats()">VIEW STATS</button>
+<button class="btn-gray" onclick="resetGame()">MAIN MENU</button></div>`;document.getElementById('endScreen').innerHTML=h;show('endScreen')}
+function endMulti(){if(state.timer)clearInterval(state.timer);if(state.turnTimer)clearInterval(state.turnTimer);let sorted=[...state.players.map((n,i)=>({name:n,score:state.scores[i],idx:i}))].sort((a,b)=>b.score-a.score);let h=`<h2>${sorted[0].name} Wins!</h2><div class="stats-box"><h3>Final Rankings:</h3>`;sorted.forEach((p,i)=>{h+=`<p class="p${p.idx+1}">${i+1}. ${p.name}: ${p.score} pts</p>`});h+=`</div><div class="btn-group">
+<button class="btn-green" onclick="playAgainChoice()">PLAY AGAIN</button>
+<button class="btn-gray" onclick="resetGame()">MAIN MENU</button></div>`;document.getElementById('endScreen').innerHTML=h;show('endScreen')}
+function playAgainChoice(){let h=`<h2>Play Again</h2>
+<button class="btn-green" onclick="startGame()">SAME SETTINGS</button>
+<button class="btn-blue" onclick="resetGame()">NEW GAME</button>`;document.getElementById('setupScreen').innerHTML=h;show('setupScreen')}
+function viewCurrentStats(){showStats({score:state.score,solved:state.solved,correct:state.correct,total:state.total})}
+function resetGame(){if(state.timer)clearInterval(state.timer);if(state.turnTimer)clearInterval(state.turnTimer);state={mode:null,timed:false,diff:null,players:[],curPlayer:0,rounds:1,curRound:1,timeLimit:0,timeLeft:0,timer:null,turnTimer:null,pokemon:null,cipher:{},revealed:new Set(),score:0,scores:[],roundScores:[],correct:0,total:0,wrong:[],solved:0,problem:null,turnAnswered:false,paused:false,shiny:false,pokemonIndex:1};show('menu')}
+function showStats(current){let h=`<h2>Statistics</h2>`;if(current){h+=`<h3>Current Game</h3><div class="stats-box">`;h+=`<p><strong>Score:</strong> ${current.score}</p>`;h+=`<p><strong>Pokemon Solved:</strong> ${current.solved}</p>`;h+=`<p><strong>Accuracy:</strong> ${current.correct}/${current.total} ${current.total>0?'('+Math.round(current.correct/current.total*100)+'%)':''}</p></div>`;h+=`<button class="btn-blue" onclick="showHistStats()">HISTORICAL STATS</button><br>`}else{h+=`<h3>Historical Stats</h3><div class="stats-box">`;if(stats.games==0)h+=`<p>No games played yet!</p>`;else{h+=`<p><strong>Easy High Score:</strong> ${stats.easy}</p>`;h+=`<p><strong>Medium High Score:</strong> ${stats.med}</p>`;h+=`<p><strong>Hard High Score:</strong> ${stats.hard}</p>`;h+=`<p><strong>Total Games:</strong> ${stats.games}</p>`;h+=`<p><strong>Total Pokemon Solved:</strong> ${stats.solved}</p>`;h+=`<p><strong>Overall Accuracy:</strong> ${stats.correct}/${stats.total} ${stats.total>0?'('+Math.round(stats.correct/stats.total*100)+'%)':''}</p>`}h+=`</div>`}h+=`<button class="btn-gray" onclick="resetGame()">BACK TO MENU</button>`;document.getElementById('statsScreen').innerHTML=h;show('statsScreen')}
+function showHistStats(){showStats(null)}
+function showHelp(){let h=`<h2>How to Play</h2><div style="text-align:left;line-height:1.8;max-width:600px;margin:0 auto">
+<h3>Basic Concept</h3>
+<p>Solve multiplication problems (1-12 facts) to reveal letters in a hidden Pokemon name. Each correct answer reveals letters in the cryptogram!</p>
+<h3>Scoring</h3>
+<p>• <strong>10 points</strong> per letter revealed</p>
+<p>• <strong>25 points</strong> for completing the Pokemon name</p>
+<p>• <strong>25 bonus points</strong> for guessing the Pokemon name correctly!</p>
+<p>• In multiplayer, you can only guess at the start of your turn</p>
+<div class="example-box">
+<strong>Example:</strong> If the Pokemon is PIKACHU and you solve 6×7=42, and 42 corresponds to the letter "K", all K's in the name are revealed!
+</div>
+</div><br>
+<button class="btn-gray" onclick="show('menu')">BACK TO MENU</button>`;document.getElementById('helpScreen').innerHTML=h;show('helpScreen')}
+function toggleSoundPanel(){document.getElementById('volPanel').classList.toggle('show')}
+function toggleSound(){sound=!sound;document.getElementById('soundBtn').classList.toggle('muted')}
+document.getElementById('volSlider').addEventListener('input',e=>{vol=e.target.value/100});
+document.addEventListener('click',e=>{if(!e.target.closest('#volPanel')&&!e.target.closest('#soundBtn'))document.getElementById('volPanel').classList.remove('show')});
+window.addEventListener('load',()=>{setTimeout(()=>{document.getElementById('loading').style.display='none';document.getElementById('game').style.display='block'},1000)});
+</script>
+</body>
+</html>
